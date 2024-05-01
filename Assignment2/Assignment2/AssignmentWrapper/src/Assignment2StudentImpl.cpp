@@ -5,8 +5,8 @@
 // Students are expected to implement the logic to calculate the magnitude of the given vector and compare it with zero.
 bool Assignment2StudentImpl::IsVectorMagnitudeZero(const Vector3& vectorToTest) const
 {
-    UNUSED_ARG(vectorToTest);
-    return false;
+    // Only the only vector with magnitude of 0 is the origin
+    return ((vectorToTest.x == 0) && (vectorToTest.y == 0) && (vectorToTest.z == 0));
 }
 
 // This function takes two circles as input, specified by their center points and radii, and checks if they are touching or not.
@@ -14,11 +14,12 @@ bool Assignment2StudentImpl::IsVectorMagnitudeZero(const Vector3& vectorToTest) 
 // Students are expected to implement the logic to check if the distance between the centers of the two circles touch or not.
 bool Assignment2StudentImpl::DoCirclesTouch(const Vector3& centerA, float radiusA, const Vector3& centerB, float radiusB) const
 {
-    UNUSED_ARG(centerA);
-    UNUSED_ARG(radiusA);
-    UNUSED_ARG(centerB);
-    UNUSED_ARG(radiusB);
-    return false;
+    float squaredDistanceBetweenXCoordinate = (centerB.x - centerA.x) * (centerB.x - centerA.x);
+    float squaredDistanceBetweenYCoordinate = (centerB.y - centerA.y) * (centerB.y - centerA.y);
+    float squaredDistanceBetweenZCoordinate = (centerB.z - centerA.z) * (centerB.z - centerA.z);
+    // Square the sum of radii so we can use the squared distance between the points
+    float squaredSumOfRadii = (radiusA + radiusB) * (radiusA + radiusB);
+    return (squaredDistanceBetweenXCoordinate + squaredDistanceBetweenYCoordinate + squaredDistanceBetweenZCoordinate) <= squaredSumOfRadii;
 }
 
 // This function takes in four 3D vectors as input: forward, up, right, and target.
@@ -28,11 +29,15 @@ bool Assignment2StudentImpl::DoCirclesTouch(const Vector3& centerA, float radius
 // The function should return a boolean value indicating whether the target is above the object (true) or not (false).
 bool Assignment2StudentImpl::IsTargetAboveMe(const Vector3& forward, const Vector3& up, const Vector3& right, const Vector3& target) const
 {
-    UNUSED_ARG(forward);
-    UNUSED_ARG(up);
     UNUSED_ARG(right);
-    UNUSED_ARG(target);
-    return false;
+    // By subtracting the forward vector from the targets vector, we get a vector that goes from the object towards the target
+    Vector3 vectorTowardsTarget = { target.x - forward.x, target.y - forward.y, target.z - forward.z };
+
+    // We want to check if this vector is going upwards, and we can do that with the dot product with the up vector
+    float dotProduct = up.x * vectorTowardsTarget.x + up.y * vectorTowardsTarget.y + up.z * vectorTowardsTarget.z;
+
+    // If the dot product is positive, the vector towards the target is going upward, which means target is above object 
+    return dotProduct > 0;
 }
 
 // This function takes three 3D points as input that represent the vertices of a triangle and calculates the normal vector of the triangle.
