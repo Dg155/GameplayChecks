@@ -1,4 +1,5 @@
 #include "Assignment2StudentImpl.h"
+#include <iostream>
 
 // This function takes a 3D vector as input and checks if its magnitude is zero or not.
 // It returns a boolean value indicating whether the magnitude of the vector is zero or not.
@@ -17,8 +18,10 @@ bool Assignment2StudentImpl::DoCirclesTouch(const Vector3& centerA, float radius
     float squaredDistanceBetweenXCoordinate = (centerB.x - centerA.x) * (centerB.x - centerA.x);
     float squaredDistanceBetweenYCoordinate = (centerB.y - centerA.y) * (centerB.y - centerA.y);
     float squaredDistanceBetweenZCoordinate = (centerB.z - centerA.z) * (centerB.z - centerA.z);
+
     // Square the sum of radii so we can use the squared distance between the points
     float squaredSumOfRadii = (radiusA + radiusB) * (radiusA + radiusB);
+
     return (squaredDistanceBetweenXCoordinate + squaredDistanceBetweenYCoordinate + squaredDistanceBetweenZCoordinate) <= squaredSumOfRadii;
 }
 
@@ -31,10 +34,10 @@ bool Assignment2StudentImpl::IsTargetAboveMe(const Vector3& forward, const Vecto
 {
     UNUSED_ARG(right);
     // By subtracting the forward vector from the targets vector, we get a vector that goes from the object towards the target
-    Vector3 vectorTowardsTarget = { target.x - forward.x, target.y - forward.y, target.z - forward.z };
+    Vector3 vectorTowardsTarget = target - forward;
 
     // We want to check if this vector is going upwards, and we can do that with the dot product with the up vector
-    float dotProduct = up.x * vectorTowardsTarget.x + up.y * vectorTowardsTarget.y + up.z * vectorTowardsTarget.z;
+    float dotProduct = CalculateDotProduct(up, target);
 
     // If the dot product is positive, the vector towards the target is going upward, which means target is above object 
     return dotProduct > 0;
@@ -45,10 +48,19 @@ bool Assignment2StudentImpl::IsTargetAboveMe(const Vector3& forward, const Vecto
 // Students are expected to implement the logic to calculate the normal vector of the triangle using the provided input points.
 Vector3 Assignment2StudentImpl::GetTriangleNormal(const Vector3& ptA, const Vector3& ptB, const Vector3& ptC) const
 {
-    UNUSED_ARG(ptA);
-    UNUSED_ARG(ptB);
-    UNUSED_ARG(ptC);
-    return {};
+    // To get the normal vector of the triangle, we just need to calculate the vectors of any 2 edges of the triangle and find its normalized cross product
+    Vector3 firstEdge = ptB - ptA;
+    Vector3 secondEdge = ptC - ptA;
+
+    // Calculating cross product without trig
+    Vector3 crossVector = CalculateCrossProduct(firstEdge, secondEdge);
+
+    // Normalize
+    float vectorMagnitude = sqrt(CalculateVectorSquaredMagnitude(crossVector));
+    if (vectorMagnitude)
+        crossVector = MultiplyVectorAndScalar(crossVector, 1 / vectorMagnitude);
+
+    return crossVector;
 }
 
 // This function takes three points forming a triangle and a target point as input.
@@ -57,11 +69,17 @@ Vector3 Assignment2StudentImpl::GetTriangleNormal(const Vector3& ptA, const Vect
 // the provided input.
 float Assignment2StudentImpl::GetDistanceFromTriangle(const Vector3& ptA, const Vector3& ptB, const Vector3& ptC, const Vector3& target) const
 {
-    UNUSED_ARG(ptA);
-    UNUSED_ARG(ptB);
-    UNUSED_ARG(ptC);
-    UNUSED_ARG(target);
-    return 0;
+    // Calculate the triangles normal vector
+    Vector3 triangleNormalVector = GetTriangleNormal(ptA, ptB, ptC);
+
+    // Get the distance from the target to a point of the triangle
+    Vector3 triangleToTarget = target - ptA;
+
+    // The dot product between that distance and the triangle normal returns minimum distance
+    float projectionDistance = CalculateDotProduct(triangleToTarget, triangleNormalVector);
+
+    // Return abs value of projection because we cannot have negative distance
+    return fabs(projectionDistance);
 }
 
 // This function takes two 3D vectors as input: planeNormal and vectorToReflect.
@@ -71,9 +89,14 @@ float Assignment2StudentImpl::GetDistanceFromTriangle(const Vector3& ptA, const 
 // the given normal vector.
 Vector3 Assignment2StudentImpl::Reflect(const Vector3& planeNormal, const Vector3& vectorToReflect) const
 {
-    UNUSED_ARG(planeNormal);
-    UNUSED_ARG(vectorToReflect);
-    return {};
+    // We will be utilizing the reflection formula r = d - 2(d*n)n where d*n is the dot product between d and n
+
+    // Calculate the dot product of the vectorToReflect and the planeNormal, then multiply by 2
+    float dotProduct = CalculateDotProduct(planeNormal, vectorToReflect) * 2.0f;
+
+    Vector3 multipliedVector = MultiplyVectorAndScalar(planeNormal, dotProduct);
+
+    return vectorToReflect - multipliedVector;
 }
 
 // This function takes a point on a plane, a normal vector to the plane, a center point of a sphere and its radius as input.
@@ -82,9 +105,35 @@ Vector3 Assignment2StudentImpl::Reflect(const Vector3& planeNormal, const Vector
 // If all points lie on the same side of the plane, the function should return true, otherwise false.
 bool Assignment2StudentImpl::IsSphereInsidePlane(const Vector3& ptOnPlane, const Vector3& planeNormal, const Vector3& circleCenter, float circleRadius) const
 {
-    UNUSED_ARG(ptOnPlane);
-    UNUSED_ARG(planeNormal);
-    UNUSED_ARG(circleCenter);
-    UNUSED_ARG(circleRadius);
-    return false;
+    // Get the vector from the point on the plane to the center of the circle
+    Vector3 vectorFromPointToCircle = circleCenter - ptOnPlane;
+
+    // This projection distance tells us where the center of the circle is in respect to the plane
+    float planeProjection = CalculateDotProduct(planeNormal, vectorFromPointToCircle);
+
+    // We add the circle radius to the projection to check if circle is within the plane
+    // If sum is 0, that means the circle is on the plane, and also within in
+    // If sum is positive, circle is above, and therefore inside the plane
+    // If sum is negative, the circle is below/outside of the plane
+    return planeProjection + circleRadius >= 0;
+}
+
+float Assignment2StudentImpl::CalculateVectorSquaredMagnitude(const Vector3& vector) const
+{
+    return (vector.x * vector.x) + (vector.y * vector.y) + (vector.z * vector.z);
+}
+
+float Assignment2StudentImpl::CalculateDotProduct(const Vector3& vectorOne, const Vector3& vectorTwo) const
+{
+    return vectorOne.x * vectorTwo.x + vectorOne.y * vectorTwo.y + vectorOne.z * vectorTwo.z;
+}
+
+Vector3 Assignment2StudentImpl::CalculateCrossProduct(const Vector3& vectorOne, const Vector3& vectorTwo) const
+{
+    return { (vectorOne.y * vectorTwo.z) - (vectorOne.z * vectorTwo.y), (vectorOne.z * vectorTwo.x) - (vectorOne.x * vectorTwo.z), (vectorOne.x * vectorTwo.y) - (vectorOne.y * vectorTwo.x) };
+}
+
+Vector3 Assignment2StudentImpl::MultiplyVectorAndScalar(const Vector3& vector, const float scalar) const
+{
+    return { vector.x * scalar, vector.y * scalar, vector.z * scalar };
 }

@@ -29,4 +29,12 @@ struct Assignment2StudentImpl : public IAssignment2
     // Radius is guaranteed to be greater than or equal to zero
     // Return TRUE if any part of the sphere is touching or inside (on the side depicted by the normal vector) the plane
     bool IsSphereInsidePlane(const Vector3& ptOnPlane, const Vector3& planeNormal, const Vector3& circleCenter, float circleRadius) const override;
+
+    float CalculateVectorSquaredMagnitude(const Vector3& vector) const;
+
+    float CalculateDotProduct(const Vector3& vectorOne, const Vector3& vectorTwo) const;
+
+    Vector3 CalculateCrossProduct(const Vector3& vectorOne, const Vector3& vectorTwo) const;
+
+    Vector3 MultiplyVectorAndScalar(const Vector3& vector, const float scalar) const;
 };
